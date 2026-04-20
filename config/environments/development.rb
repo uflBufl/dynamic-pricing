@@ -20,7 +20,7 @@ Rails.application.configure do
   # Enable/disable caching. By default caching is disabled.
   # Run rails dev:cache to toggle caching.
   if Rails.root.join("tmp/caching-dev.txt").exist?
-    config.cache_store = :memory_store
+    config.cache_store = :solid_cache_store
     config.public_file_server.headers = {
       "Cache-Control" => "public, max-age=#{2.days.to_i}"
     }
@@ -29,6 +29,9 @@ Rails.application.configure do
 
     config.cache_store = :null_store
   end
+
+  config.active_job.queue_adapter = :solid_queue
+  config.solid_queue.connects_to = { database: { writing: :queue } }
 
   # Print deprecation notices to the Rails logger.
   config.active_support.deprecation = :log

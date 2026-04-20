@@ -16,4 +16,11 @@ class RateApiClient
     }.to_json
     self.post("/pricing", body: params)
   end
+
+  def self.get_all_rates(attributes)
+    params = {
+      attributes: attributes[:attributes]
+    }.to_json
+    self.post("/pricing", body: params)
+  end
 end
