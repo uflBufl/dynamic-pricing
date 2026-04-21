@@ -5,22 +5,18 @@ class RateApiClient
   headers 'token' => ENV.fetch('RATE_API_TOKEN', '04aa6f42aa03f220c2ae9a276cd68c62')
 
   def self.get_rate(period:, hotel:, room:)
-    params = {
-      attributes: [
-        {
-          period: period,
-          hotel: hotel,
-          room: room
-        }
-      ]
-    }.to_json
-    self.post("/pricing", body: params)
+    get_rates([{ period: period, hotel: hotel, room: room }])
   end
 
-  def self.get_all_rates(attributes)
+  def self.get_rates(attributes)
     params = {
-      attributes: attributes[:attributes]
+      attributes: attributes
     }.to_json
-    self.post("/pricing", body: params)
+    post_pricing(params)
+  end
+
+  private
+  def self.post_pricing(params)
+    post("/pricing", body: params)
   end
 end

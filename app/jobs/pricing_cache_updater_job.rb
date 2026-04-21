@@ -1,41 +1,43 @@
 class PricingCacheUpdaterJob < ApplicationJob
   queue_as :default
-  CACHE_TTL = 5.minutes
+  retry_on StandardError, wait: :polynomially_longer, attempts: 3
 
   def perform
-    puts 'in job'
+    Rails.logger.tagged(self.class.name, "job_id=#{job_id}") do
+      start_time = Time.current
+      Rails.logger.info("started")
 
-    attributes_with_rates = RateApiClient.get_all_rates(attributes: all_keys)
+      response = RateApiClient.get_rates(all_keys)
+      raise HTTParty::Error, response.body.to_s unless response.success?
 
-    if attributes_with_rates.success?
-      puts 'success'
-      parsed_rates = JSON.parse(attributes_with_rates.body)["rates"]
+      write_rates_to_cache(JSON.parse(response.body)["rates"])
 
-      parsed_rates.each do |key|
-        k = cache_key(key['period'], key['hotel'],key['room'])
-        Rails.cache.write(k, key['rate'], expires_in: CACHE_TTL) if key['rate']
-      end
-    else
-      puts 'error'
-      errors << attributes_with_rates.body['error']
+      Rails.logger.info({event: "finish", duration: (Time.current - start_time)}.to_json)
     end
-
-    puts 'out job'
+  rescue => e
+    Rails.logger.error({ event: "error", error: e.message }.to_json)
+    raise
   end
 
   private
 
-  def all_keys
-    Api::V1::PricingController::VALID_PERIODS.flat_map do |period|
-      Api::V1::PricingController::VALID_HOTELS.flat_map do |hotel|
-        Api::V1::PricingController::VALID_ROOMS.flat_map do |room|
-          [{ period:, hotel:, room: }]
-        end
-      end
+  def write_rates_to_cache(rates)
+    rates.each do |rate|
+      next unless rate['rate']
+
+      Rails.cache.write(
+        Pricing::ValidValues.cache_key(rate['period'], rate['hotel'], rate['room']),
+        rate['rate'],
+        expires_in: Pricing::ValidValues::CACHE_TTL
+      )
     end
   end
 
-  def cache_key(period, hotel, room)
-    "rate|#{period}|#{hotel}|#{room}"
+  def all_keys
+    Pricing::ValidValues::PERIODS.flat_map do |period|
+      Pricing::ValidValues::HOTELS.flat_map do |hotel|
+        Pricing::ValidValues::ROOMS.map { |room| { period: period, hotel: hotel, room: room } }
+      end
+    end
   end
 end

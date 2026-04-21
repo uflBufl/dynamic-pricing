@@ -96,7 +96,7 @@ GEM
       irb (~> 1.10)
       reline (>= 0.3.8)
     drb (2.2.3)
-    erb (6.0.3)
+    erb (6.0.4)
     erubi (1.13.1)
     et-orbi (1.4.0)
       tzinfo
@@ -137,9 +137,10 @@ GEM
       net-smtp
     marcel (1.1.0)
     mini_mime (1.1.5)
-    minitest (6.0.4)
+    minitest (6.0.5)
       drb (~> 2.0)
       prism (~> 1.5)
+    minitest-mock (5.27.0)
     msgpack (1.8.0)
     multi_xml (0.8.1)
       bigdecimal (>= 3.1, < 5)
@@ -261,6 +262,7 @@ DEPENDENCIES
   debug
   httparty
   listen (~> 3.3)
+  minitest-mock
   puma (>= 5.0)
   rails (~> 7.1.5, >= 7.1.5.2)
   solid_cache

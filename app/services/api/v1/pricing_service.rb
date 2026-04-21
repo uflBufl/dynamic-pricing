@@ -7,27 +7,45 @@ module Api::V1
     end
 
     def run
-      c_key = cache_key(@period, @hotel, @room)
+      Rails.logger.tagged("PricingService") do
+        Rails.logger.info({event: "call_started", period: @period, hotel: @hotel, room: @room }.to_json)
 
-      cached = Rails.cache.read(c_key)
-      if cached.present?
-        @result = cached
-      else
-        rate = RateApiClient.get_rate(period: @period, hotel: @hotel, room: @room)
-        if rate.success?
-          parsed_rate = JSON.parse(rate.body)
-          parsed_rate['rates'][0]
-          @result = parsed_rate['rates'].detect { |r| r['period'] == @period && r['hotel'] == @hotel && r['room'] == @room }&.dig('rate')
-        else
-          errors << rate.body['error']
-        end
+        @result = fetch_value
+      rescue => e
+        Rails.logger.error({ event: "error", error: e.message }.to_json)
+        errors << e.message
+        nil
+      ensure
+        Rails.logger.info("call_finished")
       end
     end
 
     private
 
-    def cache_key(period, hotel, room)
-      "rate|#{period}|#{hotel}|#{room}"
+    def fetch_value
+      value = Rails.cache.read(cache_key)
+      return value if value.present?
+
+      fetch_from_api
+    end
+
+    def fetch_from_api
+      response = RateApiClient.get_rate(period: @period, hotel: @hotel, room: @room)
+      if response.success?
+        rates = JSON.parse(response.body)["rates"]
+        rate = rates.detect { |r| r["period"] == @period && r["hotel"] == @hotel && r["room"] == @room }
+        value = rate&.dig("rate")
+
+        Rails.cache.write(cache_key, value, expires_in: Pricing::ValidValues::CACHE_TTL) if value
+        value
+      else
+        errors << JSON.parse(response.body)["error"]
+        nil
+      end
+    end
+
+    def cache_key
+      @cache_key ||= Pricing::ValidValues.cache_key(@period, @hotel, @room)
     end
   end
 end

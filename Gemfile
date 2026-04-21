@@ -48,3 +48,7 @@ group :development do
   gem "listen", "~> 3.3"
 end
 
+group :test do
+  gem "minitest-mock"
+end
+
