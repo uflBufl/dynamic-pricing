@@ -78,3 +78,17 @@ The solution implements a hybrid caching strategy:
 - Lower cost — uses disk storage, not RAM
 - Data persists across restarts — no data loss
 - Simpler setup — single gem, no external service
+
+## How to Run
+
+### For Quick Start:
+
+```bash
+docker compose up -d --build
+
+curl 'http://localhost:3000/api/v1/pricing?period=Summer&hotel=FloatingPointResort&room=SingletonRoom'
+```
+### To Run Tests:
+```bash
+docker compose exec interview-dev ./bin/rails test
+```

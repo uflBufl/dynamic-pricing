@@ -14,3 +14,14 @@ services:
       - RATE_API_URL=http://rate-api:8080
     depends_on:
       - rate-api
+
+  worker:
+    build: .
+    volumes:
+      - .:/rails
+    environment:
+      - RATE_API_URL=http://rate-api:8080
+    depends_on:
+      - rate-api
+      - interview-dev
+    command: bundle exec rake solid_queue:start
