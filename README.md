@@ -42,8 +42,15 @@ The solution implements a hybrid caching strategy:
 | PricingService | Business logic, reads/writes cache |
 | RateApiClient | HTTP client wrapper for rate-api |
 | PricingCacheUpdaterJob | Scheduled batch refresh job |
-| SolidCache | Cache storage backend (SQLite) |
-| SolidQueue | Job queue with recurring task scheduler |
+
+### Dependencies
+
+| Gem        | Purpose |
+|------------|--------|
+| HTTParty   | HTTP client for rate-api |
+| SolidCache | SQLite-backed cache |
+| SolidQueue | Job queue + recurring tasks |
+| SQLite3   | Database |
 
 ## Design Decisions
 
@@ -59,8 +66,7 @@ The solution implements a hybrid caching strategy:
 
 ### Why every 4 minutes?
 
-- Provides buffer before 5-minute TTL expiration
-- If job fails, next run (4 min later) starts before cache expires (5 min)
+- Provides buffer before 5-minute TTL expiration for mitigation possible retry attempts and "computationally expensive" request
 
 ### Why SolidCache instead of Redis?
 
